@@ -3,7 +3,7 @@ import openai
 import os
 from dotenv import load_dotenv
 
-# Tải API key từ file .env (chúng ta sẽ tạo file này ở bước sau)
+# Tải API key từ file .env
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -29,11 +29,12 @@ if st.button("Gửi"):
         st.session_state["messages"].append({"role": "user", "content": user_input})
 
         # Gọi OpenAI API để lấy phản hồi
-    response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[{"role": "user", "content": user_input}]
-).choices[0].message["content"]
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=st.session_state["messages"]
+        )
 
+        chatbot_response = response["choices"][0]["message"]["content"]
 
         # Thêm phản hồi của chatbot vào lịch sử
         st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
