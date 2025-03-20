@@ -29,7 +29,7 @@ if st.button("Gửi"):
         st.session_state["messages"].append({"role": "user", "content": user_input})
 
         # Gọi OpenAI API để lấy phản hồi
-       response = openai.ChatCompletion.create(
+    response = openai.ChatCompletion.create(
     model="gpt-3.5-turbo",
     messages=[{"role": "user", "content": user_input}]
 ).choices[0].message["content"]
