@@ -1,88 +1,42 @@
 import streamlit as st
-from openai import OpenAI
+import openai
 import os
+from dotenv import load_dotenv
 
-def rfile(name_file):
-    with open(name_file, "r", encoding="utf-8") as file:
-        return file.read()
+# Tải API key từ file .env (chúng ta sẽ tạo file này ở bước sau)
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-try:
-    col1, col2, col3 = st.columns([3, 2, 3])
-    with col2:
-        st.image("logo.png", use_container_width=True)
-        st.markdown(
-            """
-            <div style="text-align: center;">
-                <a href="https://cdbp.edu.vn" target="_blank">Website</a> |
-                <a href="https://zalo.me/caodangbinhphuoc" target="_blank">Zalo</a> |
-                <a href="https://facebook.com/truongcaodangbp" target="_blank">Fanpage</a> |
-                <a href="https://tiktok.com/@cdbp93" target="_blank">Tiktok</a>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-except:
-    pass
+# Giao diện Streamlit
+st.title("Chatbot AI")
+st.write("Hãy nhập câu hỏi của bạn vào bên dưới!")
 
-title_content = rfile("00.xinchao.txt")
-st.markdown(
-    f"""<h1 style="text-align: center; font-size: 24px;">{title_content}</h1>""",
-    unsafe_allow_html=True
-)
-
-openai_api_key = st.secrets.get("OPENAI_API_KEY")
-client = OpenAI(api_key=openai_api_key)
-
-INITIAL_SYSTEM_MESSAGE = {"role": "system", "content": rfile("01.system_trainning.txt")}
-INITIAL_ASSISTANT_MESSAGE = {"role": "assistant", "content": rfile("02.assistant.txt")}
-
+# Khởi tạo lịch sử chat
 if "messages" not in st.session_state:
-    st.session_state.messages = [INITIAL_SYSTEM_MESSAGE, INITIAL_ASSISTANT_MESSAGE]
+    st.session_state["messages"] = []
 
-st.markdown(
-    """
-    <style>
-        .assistant {
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 75%;
-            background: none;
-            text-align: left;
-        }
-        .user {
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 75%;
-            background-color: #f0f2f5;
-            text-align: right;
-            margin-left: auto;
-        }
-        .assistant::before { content: "🤖 "; font-weight: bold; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# Hiển thị lịch sử chat
+for msg in st.session_state["messages"]:
+    role = "Bạn" if msg["role"] == "user" else "Chatbot"
+    st.markdown(f"**{role}:** {msg['content']}")
 
-for message in st.session_state.messages:
-    if message["role"] == "assistant":
-        st.markdown(f'<div class="assistant">{message["content"]}</div>', unsafe_allow_html=True)
-    elif message["role"] == "user":
-        st.markdown(f'<div class="user">{message["content"]}</div>', unsafe_allow_html=True)
+# Ô nhập liệu để người dùng nhập câu hỏi
+user_input = st.text_input("Nhập tin nhắn:")
 
-if prompt := st.chat_input("Bạn nhập nội dung cần trao đổi ở đây nhé?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.markdown(f'<div class="user">{prompt}</div>', unsafe_allow_html=True)
+if st.button("Gửi"):
+    if user_input:
+        # Thêm tin nhắn của người dùng vào lịch sử
+        st.session_state["messages"].append({"role": "user", "content": user_input})
 
-    response = ""
-    stream = client.chat.completions.create(
-        model=rfile("module_chatgpt.txt").strip(),
-        messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
-        stream=True,
-    )
+        # Gọi OpenAI API để lấy phản hồi
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": msg["role"], "content": msg["content"]} for msg in st.session_state["messages"]]
+        )
+        chatbot_response = response.choices[0].message.content.strip()
 
-    for chunk in stream:
-        if chunk.choices:
-            response += chunk.choices[0].delta.content or ""
+        # Thêm phản hồi của chatbot vào lịch sử
+        st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
 
-    st.markdown(f'<div class="assistant">{response}</div>', unsafe_allow_html=True)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        # Cập nhật giao diện
+        st.experimental_rerun()
