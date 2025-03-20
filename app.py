@@ -8,7 +8,14 @@ load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
 # Khởi tạo client OpenAI
-client = openai.OpenAI(api_key=api_key)
+import openai
+
+api_key = os.getenv("OPENAI_API_KEY")
+client = openai.OpenAI(api_key=api_key) if api_key else None
+
+if client is None:
+    st.error("Lỗi: Không tìm thấy API key. Hãy kiểm tra lại file .env hoặc thiết lập biến môi trường!")
+
 
 # Giao diện Streamlit
 st.title("Chatbot AI")
