@@ -8,7 +8,7 @@ load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
 # Khởi tạo client OpenAI
-client = openai.OpenAI(api_key=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)
+client = openai.OpenAI(api_key=api_key)
 
 # Giao diện Streamlit
 st.title("Chatbot AI")
